@@ -1,87 +1,78 @@
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const path = require('path');
 
 // Database file path
-const dbPath = process.env.NODE_ENV === 'production' 
-    ? path.join('/tmp', 'jain_saree_center.db') 
+const dbPath = process.env.NODE_ENV === 'production'
+    ? path.join('/tmp', 'jain_saree_center.db')
     : path.join(__dirname, 'jain_saree_center.db');
 
 // Create database connection
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error opening database:', err.message);
-    } else {
-        console.log('Connected to SQLite database.');
-        initializeTables();
-    }
-});
+let db;
+try {
+    db = new Database(dbPath);
+    console.log('Connected to SQLite database.');
+    initializeTables();
+} catch (err) {
+    console.error('Error opening database:', err.message);
+    throw err;
+}
 
 // Initialize database tables
 function initializeTables() {
-    // Products table
-    db.run(`
-        CREATE TABLE IF NOT EXISTS products (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            category TEXT NOT NULL,
-            piecesPerSet INTEGER NOT NULL,
-            pricePerSet REAL NOT NULL,
-            description TEXT,
-            imageUrl TEXT,
-            inStock BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `, (err) => {
-        if (err) {
-            console.error('Error creating products table:', err.message);
-        } else {
-            console.log('Products table ready.');
-        }
-    });
+    try {
+        // Products table
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS products (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                category TEXT NOT NULL,
+                piecesPerSet INTEGER NOT NULL,
+                pricePerSet REAL NOT NULL,
+                description TEXT,
+                imageUrl TEXT,
+                inStock BOOLEAN DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('Products table ready.');
 
-    // Orders table
-    db.run(`
-        CREATE TABLE IF NOT EXISTS orders (
-            id TEXT PRIMARY KEY,
-            orderId TEXT UNIQUE NOT NULL,
-            customerName TEXT NOT NULL,
-            customerEmail TEXT NOT NULL,
-            customerPhone TEXT NOT NULL,
-            customerAddress TEXT NOT NULL,
-            customerCity TEXT NOT NULL,
-            customerState TEXT NOT NULL,
-            customerPincode TEXT NOT NULL,
-            customerMessage TEXT,
-            orderItems TEXT NOT NULL,
-            totalSets INTEGER NOT NULL,
-            totalAmount REAL NOT NULL,
-            orderStatus TEXT DEFAULT 'pending',
-            orderDate DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `, (err) => {
-        if (err) {
-            console.error('Error creating orders table:', err.message);
-        } else {
-            console.log('Orders table ready.');
-        }
-    });
+        // Orders table
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS orders (
+                id TEXT PRIMARY KEY,
+                orderId TEXT UNIQUE NOT NULL,
+                customerName TEXT NOT NULL,
+                customerEmail TEXT NOT NULL,
+                customerPhone TEXT NOT NULL,
+                customerAddress TEXT NOT NULL,
+                customerCity TEXT NOT NULL,
+                customerState TEXT NOT NULL,
+                customerPincode TEXT NOT NULL,
+                customerMessage TEXT,
+                orderItems TEXT NOT NULL,
+                totalSets INTEGER NOT NULL,
+                totalAmount REAL NOT NULL,
+                orderStatus TEXT DEFAULT 'pending',
+                orderDate DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('Orders table ready.');
 
-    // Settings table
-    db.run(`
-        CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `, (err) => {
-        if (err) {
-            console.error('Error creating settings table:', err.message);
-        } else {
-            console.log('Settings table ready.');
-            initializeDefaultSettings();
-        }
-    });
+        // Settings table
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('Settings table ready.');
+        initializeDefaultSettings();
+    } catch (err) {
+        console.error('Error initializing tables:', err.message);
+        throw err;
+    }
 }
 
 // Initialize default settings
@@ -96,147 +87,192 @@ function initializeDefaultSettings() {
         { key: 'smtp_pass', value: '' }
     ];
 
-    defaultSettings.forEach(setting => {
-        db.run(`
+    try {
+        const insertStmt = db.prepare(`
             INSERT OR IGNORE INTO settings (key, value, created_at, updated_at)
             VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        `, [setting.key, setting.value], (err) => {
-            if (err) {
-                console.error('Error inserting default setting:', err.message);
-            }
+        `);
+
+        defaultSettings.forEach(setting => {
+            insertStmt.run(setting.key, setting.value);
         });
-    });
+    } catch (err) {
+        console.error('Error inserting default settings:', err.message);
+    }
 }
 
 // Product operations
 const productOperations = {
     getAll: (callback) => {
-        db.all('SELECT id, name, category, piecesPerSet AS pieces_per_set, pricePerSet AS price_per_set, description, imageUrl AS image_url, inStock AS in_stock, created_at FROM products ORDER BY created_at DESC', [], callback);
+        try {
+            const stmt = db.prepare('SELECT id, name, category, piecesPerSet AS pieces_per_set, pricePerSet AS price_per_set, description, imageUrl AS image_url, inStock AS in_stock, created_at FROM products ORDER BY created_at DESC');
+            const rows = stmt.all();
+            callback(null, rows);
+        } catch (err) {
+            callback(err, null);
+        }
     },
 
     getById: (id, callback) => {
-        db.get('SELECT * FROM products WHERE id = ?', [id], callback);
+        try {
+            const stmt = db.prepare('SELECT * FROM products WHERE id = ?');
+            const row = stmt.get(id);
+            callback(null, row);
+        } catch (err) {
+            callback(err, null);
+        }
     },
 
     create: (product, callback) => {
-        const sql = `
-            INSERT INTO products (id, name, category, piecesPerSet, pricePerSet, description, imageUrl, inStock)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-        const values = [
-            product.id,
-            product.name,
-            product.category,
-            product.piecesPerSet,
-            product.pricePerSet,
-            product.description || '',
-            product.imageUrl || '',
-            product.inStock ? 1 : 0
-        ];
-
-        db.run(sql, values, function(err) {
-            callback(err, { id: product.id, changes: this.changes });
-        });
+        try {
+            const stmt = db.prepare(`
+                INSERT INTO products (id, name, category, piecesPerSet, pricePerSet, description, imageUrl, inStock)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+            const result = stmt.run(
+                product.id,
+                product.name,
+                product.category,
+                product.piecesPerSet,
+                product.pricePerSet,
+                product.description || '',
+                product.imageUrl || '',
+                product.inStock ? 1 : 0
+            );
+            callback(null, { id: product.id, changes: result.changes });
+        } catch (err) {
+            callback(err, null);
+        }
     },
 
     update: (id, product, callback) => {
-        const sql = `
-            UPDATE products
-            SET name = ?, category = ?, piecesPerSet = ?, pricePerSet = ?,
-                description = ?, imageUrl = ?, inStock = ?
-            WHERE id = ?
-        `;
-        const values = [
-            product.name,
-            product.category,
-            product.piecesPerSet,
-            product.pricePerSet,
-            product.description || '',
-            product.imageUrl || '',
-            product.inStock ? 1 : 0,
-            id
-        ];
-
-        db.run(sql, values, function(err) {
-            callback(err, { changes: this.changes });
-        });
+        try {
+            const stmt = db.prepare(`
+                UPDATE products
+                SET name = ?, category = ?, piecesPerSet = ?, pricePerSet = ?,
+                    description = ?, imageUrl = ?, inStock = ?
+                WHERE id = ?
+            `);
+            const result = stmt.run(
+                product.name,
+                product.category,
+                product.piecesPerSet,
+                product.pricePerSet,
+                product.description || '',
+                product.imageUrl || '',
+                product.inStock ? 1 : 0,
+                id
+            );
+            callback(null, { changes: result.changes });
+        } catch (err) {
+            callback(err, null);
+        }
     },
 
     delete: (id, callback) => {
-        db.run('DELETE FROM products WHERE id = ?', [id], function(err) {
-            callback(err, { changes: this.changes });
-        });
+        try {
+            const stmt = db.prepare('DELETE FROM products WHERE id = ?');
+            const result = stmt.run(id);
+            callback(null, { changes: result.changes });
+        } catch (err) {
+            callback(err, null);
+        }
     }
 };
 
 // Order operations
 const orderOperations = {
     getAll: (callback) => {
-        db.all('SELECT id, orderId, customerName AS customer_name, customerEmail AS customer_email, customerPhone AS customer_phone, customerAddress AS customer_address, customerCity, customerState, customerPincode, customerMessage, orderItems, totalSets AS total_sets, totalAmount AS total_amount, orderStatus AS status, orderDate AS created_at FROM orders ORDER BY orderDate DESC', [], callback);
+        try {
+            const stmt = db.prepare('SELECT id, orderId, customerName AS customer_name, customerEmail AS customer_email, customerPhone AS customer_phone, customerAddress AS customer_address, customerCity, customerState, customerPincode, customerMessage, orderItems, totalSets AS total_sets, totalAmount AS total_amount, orderStatus AS status, orderDate AS created_at FROM orders ORDER BY orderDate DESC');
+            const rows = stmt.all();
+            callback(null, rows);
+        } catch (err) {
+            callback(err, null);
+        }
     },
 
     getById: (id, callback) => {
-        db.get('SELECT id, orderId, customerName AS customer_name, customerEmail AS customer_email, customerPhone AS customer_phone, customerAddress AS customer_address, customerCity, customerState, customerPincode, customerMessage, orderItems, totalSets AS total_sets, totalAmount AS total_amount, orderStatus AS status, orderDate AS created_at FROM orders WHERE id = ?', [id], callback);
+        try {
+            const stmt = db.prepare('SELECT id, orderId, customerName AS customer_name, customerEmail AS customer_email, customerPhone AS customer_phone, customerAddress AS customer_address, customerCity, customerState, customerPincode, customerMessage, orderItems, totalSets AS total_sets, totalAmount AS total_amount, orderStatus AS status, orderDate AS created_at FROM orders WHERE id = ?');
+            const row = stmt.get(id);
+            callback(null, row);
+        } catch (err) {
+            callback(err, null);
+        }
     },
 
     create: (order, callback) => {
-        const sql = `
-            INSERT INTO orders (id, orderId, customerName, customerEmail, customerPhone,
-                              customerAddress, customerCity, customerState, customerPincode,
-                              customerMessage, orderItems, totalSets, totalAmount, orderStatus)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-        const values = [
-            order.id,
-            order.orderId,
-            order.customerName,
-            order.customerEmail,
-            order.customerPhone,
-            order.customerAddress,
-            order.customerCity,
-            order.customerState,
-            order.customerPincode,
-            order.customerMessage || '',
-            JSON.stringify(order.orderItems),
-            order.totalSets,
-            order.totalAmount,
-            order.orderStatus || 'pending'
-        ];
-
-        db.run(sql, values, function(err) {
-            callback(err, { id: order.id, changes: this.changes });
-        });
+        try {
+            const stmt = db.prepare(`
+                INSERT INTO orders (id, orderId, customerName, customerEmail, customerPhone,
+                                  customerAddress, customerCity, customerState, customerPincode,
+                                  customerMessage, orderItems, totalSets, totalAmount, orderStatus)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+            const result = stmt.run(
+                order.id,
+                order.orderId,
+                order.customerName,
+                order.customerEmail,
+                order.customerPhone,
+                order.customerAddress,
+                order.customerCity,
+                order.customerState,
+                order.customerPincode,
+                order.customerMessage || '',
+                JSON.stringify(order.orderItems),
+                order.totalSets,
+                order.totalAmount,
+                order.orderStatus || 'pending'
+            );
+            callback(null, { id: order.id, changes: result.changes });
+        } catch (err) {
+            callback(err, null);
+        }
     },
 
     updateStatus: (id, status, callback) => {
-        db.run(
-            'UPDATE orders SET orderStatus = ? WHERE id = ?',
-            [status, id],
-            function(err) {
-                callback(err, { changes: this.changes });
-            }
-        );
+        try {
+            const stmt = db.prepare('UPDATE orders SET orderStatus = ? WHERE id = ?');
+            const result = stmt.run(status, id);
+            callback(null, { changes: result.changes });
+        } catch (err) {
+            callback(err, null);
+        }
     }
 };
 
 // Settings operations
 const settingsOperations = {
     getAll: (callback) => {
-        db.all('SELECT * FROM settings ORDER BY key', [], callback);
+        try {
+            const stmt = db.prepare('SELECT * FROM settings ORDER BY key');
+            const rows = stmt.all();
+            callback(null, rows);
+        } catch (err) {
+            callback(err, null);
+        }
     },
 
     getByKey: (key, callback) => {
-        db.get('SELECT * FROM settings WHERE key = ?', [key], callback);
+        try {
+            const stmt = db.prepare('SELECT * FROM settings WHERE key = ?');
+            const row = stmt.get(key);
+            callback(null, row);
+        } catch (err) {
+            callback(err, null);
+        }
     },
 
     update: (key, value, callback) => {
-        db.run(
-            'UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?',
-            [value, key],
-            function(err) {
-                callback(err, { changes: this.changes });
-            }
-        );
+        try {
+            const stmt = db.prepare('UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?');
+            const result = stmt.run(value, key);
+            callback(null, { changes: result.changes });
+        } catch (err) {
+            callback(err, null);
+        }
     }
 };
 
