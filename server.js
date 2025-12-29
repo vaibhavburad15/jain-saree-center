@@ -669,6 +669,7 @@ function sendOwnerEmail(orderData, businessName, ownerEmail) {
 if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`Server running on http://localhost:${PORT}`);
+        console.log('Database: Vercel Postgres');
     });
 }
 
