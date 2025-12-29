@@ -1,4 +1,5 @@
-const Database = require('better-sqlite3');
+const initSqlJs = require('sql.js');
+const fs = require('fs');
 const path = require('path');
 
 // Database file path
@@ -8,14 +9,47 @@ const dbPath = process.env.NODE_ENV === 'production'
 
 // Create database connection
 let db;
-try {
-    db = new Database(dbPath);
-    console.log('Connected to SQLite database.');
-    initializeTables();
-} catch (err) {
-    console.error('Error opening database:', err.message);
-    throw err;
+let SQL;
+let dbBuffer;
+
+async function initializeDatabase() {
+    try {
+        SQL = await initSqlJs();
+        console.log('SQL.js initialized.');
+
+        // Try to load existing database file
+        if (fs.existsSync(dbPath)) {
+            const filebuffer = fs.readFileSync(dbPath);
+            db = new SQL.Database(filebuffer);
+            console.log('Loaded existing SQLite database.');
+        } else {
+            db = new SQL.Database();
+            console.log('Created new SQLite database.');
+        }
+
+        initializeTables();
+    } catch (err) {
+        console.error('Error initializing database:', err.message);
+        throw err;
+    }
 }
+
+// Save database to file periodically
+function saveDatabase() {
+    if (db) {
+        try {
+            dbBuffer = db.export();
+            const buffer = Buffer.from(dbBuffer);
+            fs.writeFileSync(dbPath, buffer);
+            console.log('Database saved to file.');
+        } catch (err) {
+            console.error('Error saving database:', err.message);
+        }
+    }
+}
+
+// Initialize database on module load
+initializeDatabase();
 
 // Initialize database tables
 function initializeTables() {
