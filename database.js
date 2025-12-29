@@ -2,7 +2,9 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // Database file path
-const dbPath = path.join(__dirname, 'jain_saree_center.db');
+const dbPath = process.env.NODE_ENV === 'production' 
+    ? path.join('/tmp', 'jain_saree_center.db') 
+    : path.join(__dirname, 'jain_saree_center.db');
 
 // Create database connection
 const db = new sqlite3.Database(dbPath, (err) => {
