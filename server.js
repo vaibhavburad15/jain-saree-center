@@ -170,13 +170,11 @@ app.post('/api/products', upload.single('productImage'), (req, res) => {
         return res.status(400).json({ success: false, message: `Missing required fields: ${!product.name ? 'name ' : ''}${!product.category ? 'category ' : ''}${product.piecesPerSet === null ? 'piecesPerSet ' : ''}${product.pricePerSet === null ? 'pricePerSet ' : ''}`.trim() });
     }
 
-    productOperations.create(product, (err, result) => {
-        if (err) {
-            console.error('Error creating product:', err);
-            return res.status(500).json({ success: false, message: 'Failed to create product', error: err.message });
-        }
-
+    productOperations.create(product).then(result => {
         res.status(201).json({ success: true, product: { ...product, id: result.id } });
+    }).catch(err => {
+        console.error('Error creating product:', err);
+        return res.status(500).json({ success: false, message: 'Failed to create product', error: err.message });
     });
 });
 
@@ -243,12 +241,7 @@ app.post('/api/orders', (req, res) => {
         orderData.id = Date.now().toString();
     }
 
-    orderOperations.create(orderData, (err, result) => {
-        if (err) {
-            console.error('Error creating order:', err);
-            return res.status(500).json({ error: 'Failed to create order' });
-        }
-
+    orderOperations.create(orderData).then(result => {
         // Send email notifications
         sendOrderEmails(orderData);
 
@@ -257,6 +250,9 @@ app.post('/api/orders', (req, res) => {
             orderId: orderData.orderId,
             message: 'Order created successfully'
         });
+    }).catch(err => {
+        console.error('Error creating order:', err);
+        return res.status(500).json({ error: 'Failed to create order' });
     });
 });
 
