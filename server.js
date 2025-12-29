@@ -6,7 +6,7 @@ const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { productOperations, orderOperations, settingsOperations } = require('./database');
+const { productOperations, orderOperations, settingsOperations, initializeTables } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +15,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Initialize database tables
+initializeTables().catch(err => {
+    console.error('Failed to initialize database:', err);
+});
 
 // Configure multer for file uploads
 const uploadsDir = path.join('/tmp', 'uploads');
