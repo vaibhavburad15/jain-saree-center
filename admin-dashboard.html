@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Jain Saree Center</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="admin-body">
+    <!-- Admin Sidebar -->
+    <div class="admin-sidebar" id="adminSidebar">
+        <div class="admin-sidebar-header">
+            <h3><i class="fas fa-store"></i> Jain Saree Center</h3>
+            <p>Admin Panel</p>
+        </div>
+        
+        <nav class="admin-nav">
+            <a href="#" class="admin-nav-link active" data-tab="dashboard">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="#" class="admin-nav-link" data-tab="products">
+                <i class="fas fa-box"></i> Products
+            </a>
+            <a href="#" class="admin-nav-link" data-tab="orders">
+                <i class="fas fa-shopping-cart"></i> Orders
+            </a>
+            <a href="#" class="admin-nav-link" data-tab="settings">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+        </nav>
+        
+        <div class="admin-sidebar-footer">
+            <button class="admin-logout-btn" id="adminLogoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Admin Main Content -->
+    <div class="admin-main">
+        <!-- Admin Header -->
+        <div class="admin-header">
+            <button class="admin-menu-toggle" id="adminMenuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 id="adminPageTitle">Dashboard</h1>
+            <div class="admin-user-info">
+                <span>Welcome, <strong>Admin</strong></span>
+            </div>
+        </div>
+
+        <!-- Admin Content -->
+        <div class="admin-content">
+            <!-- Dashboard Tab -->
+            <div class="admin-tab active" id="dashboardTab">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon products">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalProducts">0</h3>
+                            <p>Total Products</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon orders">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalOrders">0</h3>
+                            <p>Total Orders</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon categories">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>8</h3>
+                            <p>Categories</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon revenue">
+                            <i class="fas fa-rupee-sign"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalRevenue">₹0</h3>
+                            <p>Total Revenue</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="recent-orders">
+                    <h3>Recent Orders</h3>
+                    <div class="orders-table-container" id="recentOrdersContainer">
+                        <p class="no-data">No orders yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div class="admin-tab" id="productsTab">
+                <div class="tab-header">
+                    <h2>Product Management</h2>
+                    <button class="btn btn-primary" id="addProductBtn">
+                        <i class="fas fa-plus"></i> Add New Product
+                    </button>
+                </div>
+                
+                <div class="products-table-container">
+                    <table class="admin-table" id="productsTable">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Pieces/Set</th>
+                                <th>Price/Set</th>
+                                <th>Stock</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <tr>
+                                <td colspan="7" class="no-data">No products available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Orders Tab -->
+            <div class="admin-tab" id="ordersTab">
+                <div class="tab-header">
+                    <h2>Order Management</h2>
+                    <div class="filter-group">
+                        <select id="orderStatusFilter" class="filter-select">
+                            <option value="">All Orders</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="orders-table-container">
+                    <table class="admin-table" id="ordersTable">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Contact</th>
+                                <th>Total Sets</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                            <tr>
+                                <td colspan="8" class="no-data">No orders available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="admin-tab" id="settingsTab">
+                <div class="tab-header">
+                    <h2>Settings</h2>
+                </div>
+                
+                <div class="settings-content">
+                    <div class="settings-section">
+                        <h3>Business Information</h3>
+                        <form id="businessSettingsForm">
+                            <div class="form-group">
+                                <label>Shop Name</label>
+                                <input type="text" value="Jain Saree Center" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Location</label>
+                                <input type="text" value="Malkapur, Maharashtra" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" id="businessPhone" value="+91 XXXXX-XXXXX">
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" id="businessEmail" value="info@jainsareecenter.com">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Notification Settings</h3>
+                        <form id="notificationSettingsForm">
+                            <div class="form-group">
+                                <label>Owner Email (for order notifications)</label>
+                                <input type="email" id="ownerEmail" value="owner@jainsareecenter.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Owner Phone (for SMS notifications)</label>
+                                <input type="tel" id="ownerPhone" value="+91 XXXXX-XXXXX">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 id="productModalTitle">Add New Product</h2>
+                <button class="modal-close" id="closeProductModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <input type="hidden" id="productId" name="productId">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productName">Product Name *</label>
+                            <input type="text" id="productName" name="productName" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="productCategory">Category *</label>
+                            <select id="productCategory" name="productCategory" required>
+                                <option value="">Select Category</option>
+                                <option value="Sarees">Sarees</option>
+                                <option value="Suiting Shirting">Suiting Shirting</option>
+                                <option value="Blouse Piece">Blouse Piece</option>
+                                <option value="Petticoat">Petticoat</option>
+                                <option value="Kurti">Kurti</option>
+                                <option value="Towel">Towel</option>
+                                <option value="Bedsheet">Bedsheet</option>
+                                <option value="Pillow Cover">Pillow Cover</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="piecesPerSet">Pieces per Set *</label>
+                            <select id="piecesPerSet" name="piecesPerSet" required>
+                                <option value="">Select</option>
+                                <option value="4">4 Pieces</option>
+                                <option value="5">5 Pieces</option>
+                                <option value="6">6 Pieces</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="pricePerSet">Price per Set (₹) *</label>
+                            <input type="number" id="pricePerSet" name="pricePerSet" min="1" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productDescription">Product Description *</label>
+                        <textarea id="productDescription" name="productDescription" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productImage">Product Image URL *</label>
+                        <input type="url" id="productImage" name="productImage" placeholder="https://example.com/image.jpg" required>
+                        <small>Enter the full URL of the product image</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="inStock" name="inStock" checked>
+                            In Stock
+                        </label>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancelProductBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Order Modal -->
+    <div class="modal" id="orderModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>Order Details</h2>
+                <button class="modal-close" id="closeOrderModal">&times;</button>
+            </div>
+            <div class="modal-body" id="orderModalContent">
+                <!-- Order details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

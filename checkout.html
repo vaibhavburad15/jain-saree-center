@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Jain Saree Center</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="top-bar">
+            <div class="container">
+                <div class="top-bar-content">
+                    <div class="contact-info">
+                        <span><i class="fas fa-phone"></i> +91 XXXXX-XXXXX</span>
+                        <span><i class="fas fa-envelope"></i> info@jainsareecenter.com</span>
+                    </div>
+                    <div class="wholesale-badge">
+                        <i class="fas fa-box"></i> WHOLESALE ONLY
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="navbar">
+            <div class="container">
+                <div class="navbar-content">
+                    <div class="logo">
+                        <h1><i class="fas fa-store"></i> Jain Saree Center</h1>
+                        <p class="location">Malkapur</p>
+                    </div>
+                    
+                    <ul class="nav-menu" id="navMenu">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="products.html">Products</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="cart.html" class="cart-link">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count" id="cartCount">0</span>
+                        </a></li>
+                    </ul>
+                    
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>Checkout</h1>
+            <p>Complete your wholesale order</p>
+        </div>
+    </section>
+
+    <!-- Checkout Section -->
+    <section class="checkout-section">
+        <div class="container">
+            <div class="checkout-grid">
+                <div class="checkout-form-section">
+                    <h3>Customer Information</h3>
+                    <form id="checkoutForm" class="checkout-form">
+                        <div class="form-group">
+                            <label for="customerName">Full Name *</label>
+                            <input type="text" id="customerName" name="customerName" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="customerEmail">Email Address *</label>
+                                <input type="email" id="customerEmail" name="customerEmail" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="customerPhone">Phone Number *</label>
+                                <input type="tel" id="customerPhone" name="customerPhone" pattern="[0-9]{10}" required>
+                                <small>Enter 10-digit mobile number</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="customerAddress">Delivery Address *</label>
+                            <textarea id="customerAddress" name="customerAddress" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="customerCity">City *</label>
+                            <input type="text" id="customerCity" name="customerCity" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="customerState">State *</label>
+                                <input type="text" id="customerState" name="customerState" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="customerPincode">Pincode *</label>
+                                <input type="text" id="customerPincode" name="customerPincode" pattern="[0-9]{6}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="customerMessage">Additional Message (Optional)</label>
+                            <textarea id="customerMessage" name="customerMessage" rows="3" placeholder="Any special instructions or requirements..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-block" id="placeOrderBtn">
+                            <i class="fas fa-check-circle"></i> Place Order
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="order-summary-section">
+                    <h3>Order Summary</h3>
+                    <div class="order-items" id="orderItems">
+                        <!-- Order items will be loaded here -->
+                    </div>
+                    
+                    <div class="order-totals">
+                        <div class="total-row">
+                            <span>Total Sets:</span>
+                            <span id="orderTotalSets">0</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Total Pieces:</span>
+                            <span id="orderTotalPieces">0</span>
+                        </div>
+                        <div class="total-row grand-total">
+                            <span>Total Amount:</span>
+                            <span id="orderGrandTotal">₹0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="checkout-note">
+                        <i class="fas fa-info-circle"></i>
+                        <p>After placing your order, you will receive a confirmation email with order details. Our team will contact you to confirm the order and arrange delivery.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Order Success Modal -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-header success">
+                <i class="fas fa-check-circle"></i>
+                <h2>Order Placed Successfully!</h2>
+            </div>
+            <div class="modal-body">
+                <p>Thank you for your wholesale order.</p>
+                <div class="order-id">
+                    <strong>Order ID:</strong> <span id="orderIdDisplay"></span>
+                </div>
+                <p>We have sent order confirmation to your email and our team will contact you shortly.</p>
+            </div>
+            <div class="modal-footer">
+                <a href="products.html" class="btn btn-secondary">Continue Shopping</a>
+                <a href="index.html" class="btn btn-primary">Go to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Jain Saree Center</h3>
+                    <p>Your trusted wholesale textile partner in Malkapur. Quality products, competitive prices, and exceptional service.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="products.html">Products</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Categories</h4>
+                    <ul>
+                        <li><a href="products.html?category=Sarees">Sarees</a></li>
+                        <li><a href="products.html?category=Kurti">Kurti</a></li>
+                        <li><a href="products.html?category=Bedsheet">Bedsheet</a></li>
+                        <li><a href="products.html?category=Towel">Towel</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contact Info</h4>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> Malkapur, Maharashtra</li>
+                        <li><i class="fas fa-phone"></i> +91 XXXXX-XXXXX</li>
+                        <li><i class="fas fa-envelope"></i> info@jainsareecenter.com</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Jain Saree Center. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script src="js/checkout.js"></script>
+</body>
+</html>
