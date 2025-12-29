@@ -1,4 +1,5 @@
 const express = require('express');
+// Force redeployment - PostgreSQL migration completed
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
