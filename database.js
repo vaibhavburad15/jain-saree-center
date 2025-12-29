@@ -318,4 +318,4 @@ const settingsOperations = {
     }
 };
 
-module.exports = { productOperations, orderOperations, settingsOperations };
+module.exports = { productOperations, orderOperations, settingsOperations, initializeTables };
