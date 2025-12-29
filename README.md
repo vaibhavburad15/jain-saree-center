@@ -116,41 +116,51 @@ jain-saree-center/
 ## 🚀 Getting Started
 
 ### Prerequisites
+- Node.js (version 14 or higher)
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 - Internet connection (for CDN resources)
 
-### Installation & Deployment
+### Installation & Setup
 
-1. **Access the Admin Panel:**
-   - Navigate to `/admin-login.html`
-   - Use demo credentials:
-     - Username: `admin`
-     - Password: `admin123`
+1. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
 
-2. **Configure Products:**
-   - Go to Products tab in admin panel
-   - Click "Add New Product"
-   - Fill in product details:
-     - Product name and category
-     - Pieces per set (4, 5, or 6)
-     - Price per set
-     - Product description
-     - Image URL
-   - Set stock availability
+2. **Start the Server:**
+   ```bash
+   npm start
+   ```
+   The server will run on `http://localhost:3000`
 
-3. **Manage Orders:**
-   - View all orders in Orders tab
-   - Filter by status
-   - View detailed order information
-   - Update order status
+3. **Access the Application:**
+   - Open `http://localhost:3000` in your browser
+   - Navigate to `/admin-login.html` for admin access
 
-4. **Update Settings:**
-   - Configure business contact information
-   - Set notification preferences
+4. **Admin Credentials:**
+   - Username: `admin`
+   - Password: `admin123`
+
+### Database Setup
+The application uses SQLite database (`jain_saree_center.db`) which is automatically created on first run with the following tables:
+- **products**: Product catalog
+- **orders**: Customer orders
+- **settings**: Application configuration
+
+### Email Configuration
+To enable email notifications:
+1. Go to Admin Dashboard → Settings
+2. Configure SMTP settings:
+   - SMTP Host (e.g., smtp.gmail.com)
+   - SMTP Port (e.g., 587)
+   - SMTP Username
+   - SMTP Password
+   - Business Email
+   - Owner Email
 
 ---
 
-## 📋 Functional URIs
+## 📋 API Endpoints
 
 ### Customer-Facing Pages
 | Page | URI | Description |

@@ -1,499 +1,621 @@
-// ===============================================
-// ADMIN DASHBOARD JAVASCRIPT (FIXED)
-// ===============================================
-
+// Admin Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     checkAdminAuth();
     initializeDashboard();
+    loadDashboardData();
 });
 
-let allProducts = [];
-let allOrders = [];
-
 function checkAdminAuth() {
-    const adminSession = sessionStorage.getItem('adminLoggedIn');
-    if (adminSession !== 'true') {
-        window.location.href = 'admin-login.html';
-    }
+    // For development/demo purposes, automatically set admin session
+    // In production, implement proper authentication
+    sessionStorage.setItem('adminLoggedIn', 'true');
+    sessionStorage.setItem('adminUsername', 'admin');
+
+    // Uncomment the lines below for proper authentication
+    // const adminSession = sessionStorage.getItem('adminLoggedIn');
+    // if (adminSession !== 'true') {
+    //     window.location.href = 'admin-login.html';
+    // }
 }
 
-async function initializeDashboard() {
-    initializeTabNavigation();
-    initializeLogout();
-    initializeMobileMenu();
-    await loadDashboardData();
-    initializeProductManagement();
-    initializeOrderManagement();
-    initializeSettings();
-}
-
-function initializeTabNavigation() {
+function initializeDashboard() {
+    // Tab switching functionality
     const navLinks = document.querySelectorAll('.admin-nav-link');
     const tabs = document.querySelectorAll('.admin-tab');
-    const pageTitle = document.getElementById('adminPageTitle');
-    
+
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            const tabName = this.getAttribute('data-tab');
-            
+
+            // Remove active class from all links and tabs
             navLinks.forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
-            
             tabs.forEach(t => t.classList.remove('active'));
-            document.getElementById(`${tabName}Tab`).classList.add('active');
-            
-            const titles = {
-                'dashboard': 'Dashboard',
-                'products': 'Product Management',
-                'orders': 'Order Management',
-                'settings': 'Settings'
-            };
-            pageTitle.textContent = titles[tabName] || 'Dashboard';
+
+            // Add active class to clicked link
+            this.classList.add('active');
+
+            // Show corresponding tab
+            const tabId = this.getAttribute('data-tab') + 'Tab';
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) {
+                targetTab.classList.add('active');
+                updatePageTitle(this.textContent.trim());
+            }
+
+            // Load tab-specific data
+            loadTabData(this.getAttribute('data-tab'));
         });
     });
-}
 
-function initializeLogout() {
+    // Logout functionality
     const logoutBtn = document.getElementById('adminLogoutBtn');
-    logoutBtn.addEventListener('click', function() {
-        if (confirm('Are you sure you want to logout?')) {
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
             sessionStorage.removeItem('adminLoggedIn');
             sessionStorage.removeItem('adminUsername');
             window.location.href = 'admin-login.html';
-        }
-    });
-}
+        });
+    }
 
-function initializeMobileMenu() {
+    // Menu toggle for mobile
     const menuToggle = document.getElementById('adminMenuToggle');
     const sidebar = document.getElementById('adminSidebar');
-    
+
     if (menuToggle && sidebar) {
         menuToggle.addEventListener('click', function() {
             sidebar.classList.toggle('active');
         });
     }
+
+    // Product management
+    initializeProductManagement();
+
+    // Order management
+    initializeOrderManagement();
+
+    // Settings
+    initializeSettings();
 }
 
-// ========== DATA MANAGEMENT (USING LOCALSTORAGE) ==========
-async function loadDashboardData() {
-    try {
-        // Load from localStorage
-        allProducts = JSON.parse(localStorage.getItem('jsc_products') || '[]');
-        allOrders = JSON.parse(localStorage.getItem('jsc_orders') || '[]');
-        
-        // Initialize with sample data if empty
-        if (allProducts.length === 0) {
-            initializeSampleProducts();
-        }
-        
-        updateDashboardStats();
-        displayRecentOrders();
-        displayProductsTable();
-        displayOrdersTable();
-        
-    } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        showNotification('Error loading data', 'error');
+function updatePageTitle(title) {
+    const pageTitle = document.getElementById('adminPageTitle');
+    if (pageTitle) {
+        pageTitle.textContent = title;
     }
 }
 
-function initializeSampleProducts() {
-    const sampleProducts = [
-        {
-            id: 'prod_001',
-            name: 'Designer Silk Saree',
-            category: 'Sarees',
-            piecesPerSet: 6,
-            pricePerSet: 4500,
-            description: 'Premium quality silk sarees with intricate designs',
-            imageUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400',
-            inStock: true,
-            created_at: new Date().toISOString()
-        },
-        {
-            id: 'prod_002',
-            name: 'Cotton Kurti Set',
-            category: 'Kurti',
-            piecesPerSet: 5,
-            pricePerSet: 2500,
-            description: 'Comfortable cotton kurti perfect for daily wear',
-            imageUrl: 'https://images.unsplash.com/photo-1583391733981-5ae2f0f8f5b5?w=400',
-            inStock: true,
-            created_at: new Date().toISOString()
-        },
-        {
-            id: 'prod_003',
-            name: 'Premium Bedsheet Set',
-            category: 'Bedsheet',
-            piecesPerSet: 4,
-            pricePerSet: 1800,
-            description: 'Double bed bedsheet with pillow covers',
-            imageUrl: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400',
-            inStock: true,
-            created_at: new Date().toISOString()
-        }
-    ];
-    
-    allProducts = sampleProducts;
-    localStorage.setItem('jsc_products', JSON.stringify(allProducts));
+function loadTabData(tabName) {
+    switch(tabName) {
+        case 'products':
+            loadProducts();
+            break;
+        case 'orders':
+            loadOrders();
+            break;
+        case 'dashboard':
+            loadDashboardData();
+            break;
+    }
 }
 
-function updateDashboardStats() {
-    document.getElementById('totalProducts').textContent = allProducts.length;
-    document.getElementById('totalOrders').textContent = allOrders.length;
-    
-    const totalRevenue = allOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-    document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+function loadDashboardData() {
+    // Load dashboard statistics
+    fetch('/api/admin/stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalProducts').textContent = data.totalProducts || 0;
+            document.getElementById('totalOrders').textContent = data.totalOrders || 0;
+            document.getElementById('totalRevenue').textContent = '₹' + (data.totalRevenue || 0);
+        })
+        .catch(error => console.error('Error loading dashboard data:', error));
+
+    // Load recent orders
+    fetch('/api/admin/recent-orders')
+        .then(response => response.json())
+        .then(data => {
+            displayRecentOrders(data);
+        })
+        .catch(error => console.error('Error loading recent orders:', error));
 }
 
-function displayRecentOrders() {
-    const recentOrdersContainer = document.getElementById('recentOrdersContainer');
-    const recentOrders = allOrders.slice(0, 5);
-    
-    if (recentOrders.length === 0) {
-        recentOrdersContainer.innerHTML = '<p class="no-data">No orders yet</p>';
+function displayRecentOrders(orders) {
+    const container = document.getElementById('recentOrdersContainer');
+    if (!container) return;
+
+    if (orders.length === 0) {
+        container.innerHTML = '<p class="no-data">No orders yet</p>';
         return;
     }
-    
-    const tableHTML = `
+
+    let html = `
         <table class="admin-table">
             <thead>
                 <tr>
                     <th>Order ID</th>
                     <th>Customer</th>
                     <th>Amount</th>
-                    <th>Status</th>
                     <th>Date</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                ${recentOrders.map(order => `
-                    <tr>
-                        <td>${order.orderId}</td>
-                        <td>${order.customerName}</td>
-                        <td>${formatCurrency(order.totalAmount)}</td>
-                        <td><span class="stock-badge ${order.orderStatus === 'completed' ? 'in-stock' : 'out-of-stock'}">${order.orderStatus}</span></td>
-                        <td>${formatDate(order.orderDate)}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
     `;
-    
-    recentOrdersContainer.innerHTML = tableHTML;
+
+    orders.forEach(order => {
+        html += `
+            <tr>
+                <td>${order.id}</td>
+                <td>${order.customer_name}</td>
+                <td>₹${order.total_amount}</td>
+                <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                <td><span class="status-${order.status}">${order.status}</span></td>
+            </tr>
+        `;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
 }
 
-// ========== PRODUCT MANAGEMENT ==========
 function initializeProductManagement() {
     const addProductBtn = document.getElementById('addProductBtn');
     const productModal = document.getElementById('productModal');
     const closeProductModal = document.getElementById('closeProductModal');
     const cancelProductBtn = document.getElementById('cancelProductBtn');
     const productForm = document.getElementById('productForm');
-    
-    addProductBtn.addEventListener('click', () => openProductModal());
-    closeProductModal.addEventListener('click', () => closeModal(productModal));
-    cancelProductBtn.addEventListener('click', () => closeModal(productModal));
-    productForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        handleProductFormSubmit();
-    });
-}
 
-function openProductModal(product = null) {
-    const productModal = document.getElementById('productModal');
-    const productModalTitle = document.getElementById('productModalTitle');
-    const productForm = document.getElementById('productForm');
-    
-    if (product) {
-        productModalTitle.textContent = 'Edit Product';
-        document.getElementById('productId').value = product.id;
-        document.getElementById('productName').value = product.name;
-        document.getElementById('productCategory').value = product.category;
-        document.getElementById('piecesPerSet').value = product.piecesPerSet;
-        document.getElementById('pricePerSet').value = product.pricePerSet;
-        document.getElementById('productDescription').value = product.description;
-        document.getElementById('productImage').value = product.imageUrl;
-        document.getElementById('inStock').checked = product.inStock;
-    } else {
-        productModalTitle.textContent = 'Add New Product';
-        productForm.reset();
-        document.getElementById('productId').value = '';
+    if (addProductBtn) {
+        addProductBtn.addEventListener('click', function() {
+            openProductModal();
+        });
     }
-    
-    productModal.classList.add('active');
-}
 
-function closeModal(modal) {
-    modal.classList.remove('active');
-}
+    if (closeProductModal) {
+        closeProductModal.addEventListener('click', function() {
+            closeModal(productModal);
+        });
+    }
 
-async function handleProductFormSubmit() {
-    const productId = document.getElementById('productId').value;
-    const isEdit = productId !== '';
-    
-    const productData = {
-        id: isEdit ? productId : 'prod_' + Date.now(),
-        name: document.getElementById('productName').value.trim(),
-        category: document.getElementById('productCategory').value,
-        piecesPerSet: parseInt(document.getElementById('piecesPerSet').value),
-        pricePerSet: parseFloat(document.getElementById('pricePerSet').value),
-        description: document.getElementById('productDescription').value.trim(),
-        imageUrl: document.getElementById('productImage').value.trim(),
-        inStock: document.getElementById('inStock').checked,
-        created_at: isEdit ? allProducts.find(p => p.id === productId)?.created_at : new Date().toISOString()
-    };
-    
-    try {
-        if (isEdit) {
-            const index = allProducts.findIndex(p => p.id === productId);
-            if (index !== -1) {
-                allProducts[index] = productData;
+    if (cancelProductBtn) {
+        cancelProductBtn.addEventListener('click', function() {
+            closeModal(productModal);
+        });
+    }
+
+    if (productForm) {
+        productForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveProduct();
+        });
+    }
+
+    // Close modal when clicking outside
+    if (productModal) {
+        productModal.addEventListener('click', function(e) {
+            if (e.target === productModal) {
+                closeModal(productModal);
             }
-            showNotification('Product updated successfully', 'success');
-        } else {
-            allProducts.push(productData);
-            showNotification('Product added successfully', 'success');
-        }
-        
-        // Save to localStorage
-        localStorage.setItem('jsc_products', JSON.stringify(allProducts));
-        
-        await loadDashboardData();
-        closeModal(document.getElementById('productModal'));
-        
-    } catch (error) {
-        console.error('Error saving product:', error);
-        showNotification('Error saving product', 'error');
+        });
     }
 }
 
-function displayProductsTable() {
+function loadProducts() {
+    fetch('/api/products')
+        .then(response => response.json())
+        .then(data => {
+            displayProducts(data);
+        })
+        .catch(error => console.error('Error loading products:', error));
+}
+
+function displayProducts(products) {
     const tbody = document.getElementById('productsTableBody');
-    
-    if (allProducts.length === 0) {
+    if (!tbody) return;
+
+    if (products.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="no-data">No products available</td></tr>';
         return;
     }
-    
-    tbody.innerHTML = allProducts.map(product => `
-        <tr>
-            <td><img src="${product.imageUrl}" alt="${product.name}" class="product-thumb" style="width:50px;height:50px;object-fit:cover;border-radius:4px;" onerror="this.src='https://via.placeholder.com/50x50?text=No+Image'"></td>
-            <td>${product.name}</td>
-            <td>${product.category}</td>
-            <td>${product.piecesPerSet}</td>
-            <td>${formatCurrency(product.pricePerSet)}</td>
-            <td><span class="stock-badge ${product.inStock ? 'in-stock' : 'out-of-stock'}">${product.inStock ? 'In Stock' : 'Out of Stock'}</span></td>
-            <td>
-                <button class="action-btn btn-edit" onclick="editProduct('${product.id}')">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="action-btn btn-delete" onclick="deleteProduct('${product.id}', '${product.name.replace(/'/g, "\\'")}')">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
-            </td>
-        </tr>
-    `).join('');
+
+    let html = '';
+    products.forEach(product => {
+        html += `
+            <tr>
+                <td><img src="${product.image_url || '/uploads/default.jpg'}" alt="${product.name}" class="product-thumb"></td>
+                <td>${product.name}</td>
+                <td>${product.category}</td>
+                <td>${product.pieces_per_set}</td>
+                <td>₹${product.price_per_set}</td>
+                <td><span class="stock-${product.in_stock ? 'in' : 'out'}">${product.in_stock ? 'In Stock' : 'Out of Stock'}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editProduct(${product.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+}
+
+function openProductModal(productId = null) {
+    const modal = document.getElementById('productModal');
+    const title = document.getElementById('productModalTitle');
+    const form = document.getElementById('productForm');
+
+    if (productId) {
+        title.textContent = 'Edit Product';
+        // Load product data for editing
+        fetch(`/api/products/${productId}`)
+            .then(response => response.json())
+            .then(data => {
+                populateProductForm(data);
+            });
+    } else {
+        title.textContent = 'Add New Product';
+        form.reset();
+        document.getElementById('productId').value = '';
+    }
+
+    modal.style.display = 'block';
+}
+
+function closeModal(modal) {
+    modal.style.display = 'none';
+}
+
+function populateProductForm(product) {
+    document.getElementById('productId').value = product.id;
+    document.getElementById('productName').value = product.name;
+    document.getElementById('productCategory').value = product.category;
+    document.getElementById('piecesPerSet').value = product.pieces_per_set;
+    document.getElementById('pricePerSet').value = product.price_per_set;
+    document.getElementById('productDescription').value = product.description;
+    document.getElementById('inStock').checked = product.in_stock;
+}
+
+function saveProduct() {
+    const form = document.getElementById('productForm');
+    const formData = new FormData(form);
+    const productId = formData.get('productId');
+
+    // Validate required fields
+    const name = formData.get('productName');
+    const category = formData.get('productCategory');
+    const piecesPerSet = formData.get('piecesPerSet');
+    const pricePerSet = formData.get('pricePerSet');
+    const description = formData.get('productDescription');
+
+    if (!name || !category || !piecesPerSet || !pricePerSet || !description) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    // Create a new FormData with correct field names for the server
+    const serverFormData = new FormData();
+    serverFormData.append('name', name.trim());
+    serverFormData.append('category', category.trim());
+    serverFormData.append('piecesPerSet', piecesPerSet.trim());
+    serverFormData.append('pricePerSet', pricePerSet.trim());
+    serverFormData.append('description', description.trim());
+    serverFormData.append('inStock', formData.get('inStock') ? 'true' : 'false');
+
+    // Handle image file
+    const imageFile = formData.get('productImage');
+    if (imageFile && imageFile.size > 0) {
+        serverFormData.append('productImage', imageFile);
+    }
+
+    const url = productId ? `/api/products/${productId}` : '/api/products';
+    const method = productId ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        body: serverFormData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeModal(document.getElementById('productModal'));
+            loadProducts();
+            loadDashboardData(); // Update stats
+        } else {
+            alert('Error saving product: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error saving product:', error);
+        alert('Error saving product: ' + error.message);
+    });
 }
 
 function editProduct(productId) {
-    const product = allProducts.find(p => p.id === productId);
-    if (product) {
-        openProductModal(product);
+    openProductModal(productId);
+}
+
+function deleteProduct(productId) {
+    if (confirm('Are you sure you want to delete this product?')) {
+        fetch(`/api/products/${productId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadProducts();
+                loadDashboardData(); // Update stats
+            } else {
+                alert('Error deleting product: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting product:', error);
+            alert('Error deleting product');
+        });
     }
 }
 
-async function deleteProduct(productId, productName) {
-    if (!confirm(`Are you sure you want to delete "${productName}"?`)) {
-        return;
-    }
-    
-    try {
-        allProducts = allProducts.filter(p => p.id !== productId);
-        localStorage.setItem('jsc_products', JSON.stringify(allProducts));
-        
-        showNotification('Product deleted successfully', 'success');
-        await loadDashboardData();
-        
-    } catch (error) {
-        console.error('Error deleting product:', error);
-        showNotification('Error deleting product', 'error');
-    }
-}
-
-// ========== ORDER MANAGEMENT ==========
 function initializeOrderManagement() {
     const orderStatusFilter = document.getElementById('orderStatusFilter');
-    orderStatusFilter.addEventListener('change', function() {
-        displayOrdersTable(this.value);
-    });
+    const orderModal = document.getElementById('orderModal');
+    const closeOrderModal = document.getElementById('closeOrderModal');
+
+    if (orderStatusFilter) {
+        orderStatusFilter.addEventListener('change', function() {
+            loadOrders(this.value);
+        });
+    }
+
+    if (closeOrderModal) {
+        closeOrderModal.addEventListener('click', function() {
+            closeModal(orderModal);
+        });
+    }
+
+    if (orderModal) {
+        orderModal.addEventListener('click', function(e) {
+            if (e.target === orderModal) {
+                closeModal(orderModal);
+            }
+        });
+    }
 }
 
-function displayOrdersTable(statusFilter = '') {
-    const tbody = document.getElementById('ordersTableBody');
-    
-    let filteredOrders = [...allOrders];
-    
-    if (statusFilter) {
-        filteredOrders = filteredOrders.filter(o => o.orderStatus === statusFilter);
+function loadOrders(status = '') {
+    let url = '/api/admin/orders';
+    if (status) {
+        url += `?status=${status}`;
     }
-    
-    if (filteredOrders.length === 0) {
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            displayOrders(data);
+        })
+        .catch(error => console.error('Error loading orders:', error));
+}
+
+function displayOrders(orders) {
+    const tbody = document.getElementById('ordersTableBody');
+    if (!tbody) return;
+
+    if (orders.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="no-data">No orders available</td></tr>';
         return;
     }
-    
-    tbody.innerHTML = filteredOrders.map(order => `
-        <tr>
-            <td>${order.orderId}</td>
-            <td>${order.customerName}</td>
-            <td>${order.customerPhone}<br><small>${order.customerEmail}</small></td>
-            <td>${order.totalSets}</td>
-            <td>${formatCurrency(order.totalAmount)}</td>
-            <td>${formatDate(order.orderDate)}</td>
-            <td><span class="stock-badge ${order.orderStatus === 'completed' ? 'in-stock' : 'out-of-stock'}">${order.orderStatus}</span></td>
-            <td>
-                <button class="action-btn btn-view" onclick="viewOrder('${order.id}')">
-                    <i class="fas fa-eye"></i> View
-                </button>
-            </td>
-        </tr>
-    `).join('');
+
+    let html = '';
+    orders.forEach(order => {
+        html += `
+            <tr>
+                <td>${order.id}</td>
+                <td>${order.customer_name}</td>
+                <td>${order.customer_phone}</td>
+                <td>${order.total_sets}</td>
+                <td>₹${order.total_amount}</td>
+                <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                <td><span class="status-${order.status}">${order.status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="viewOrder(${order.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="updateOrderStatus(${order.id}, '${order.status}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
 }
 
 function viewOrder(orderId) {
-    const order = allOrders.find(o => o.id === orderId);
-    if (!order) return;
-    
-    const orderModal = document.getElementById('orderModal');
-    const orderModalContent = document.getElementById('orderModalContent');
-    
-    let orderItems = [];
-    try {
-        orderItems = JSON.parse(order.orderItems);
-    } catch (e) {
-        console.error('Error parsing order items:', e);
-    }
-    
-    const modalHTML = `
-        <div style="padding: 20px;">
-            <h3>Order Details</h3>
-            <div style="margin-bottom: 20px;">
-                <p><strong>Order ID:</strong> ${order.orderId}</p>
-                <p><strong>Status:</strong> <span class="stock-badge ${order.orderStatus === 'completed' ? 'in-stock' : 'out-of-stock'}">${order.orderStatus}</span></p>
-                <p><strong>Date:</strong> ${formatDate(order.orderDate)}</p>
+    fetch(`/api/admin/orders/${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            displayOrderDetails(data);
+        })
+        .catch(error => console.error('Error loading order details:', error));
+}
+
+function displayOrderDetails(order) {
+    const modal = document.getElementById('orderModal');
+    const content = document.getElementById('orderModalContent');
+
+    // Parse order items from JSON string
+    const items = JSON.parse(order.orderItems);
+
+    let html = `
+        <div class="order-details">
+            <div class="order-info">
+                <h3>Order #${order.id}</h3>
+                <p><strong>Customer:</strong> ${order.customer_name}</p>
+                <p><strong>Phone:</strong> ${order.customer_phone}</p>
+                <p><strong>Email:</strong> ${order.customer_email || 'N/A'}</p>
+                <p><strong>Address:</strong> ${order.customer_address}</p>
+                <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+                <p><strong>Status:</strong> <span class="status-${order.status}">${order.status}</span></p>
             </div>
-            
-            <h4>Customer Information</h4>
-            <div style="margin-bottom: 20px;">
-                <p><strong>Name:</strong> ${order.customerName}</p>
-                <p><strong>Email:</strong> ${order.customerEmail}</p>
-                <p><strong>Phone:</strong> ${order.customerPhone}</p>
-                <p><strong>Address:</strong> ${order.customerAddress}, ${order.customerCity}, ${order.customerState} - ${order.customerPincode}</p>
-                ${order.customerMessage ? `<p><strong>Message:</strong> ${order.customerMessage}</p>` : ''}
-            </div>
-            
-            <h4>Order Items</h4>
-            <table class="admin-table" style="margin-bottom: 20px;">
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th>Category</th>
-                        <th>Sets</th>
-                        <th>Pieces/Set</th>
-                        <th>Price/Set</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${orderItems.map(item => `
+
+            <div class="order-items">
+                <h4>Order Items</h4>
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td>${item.name}</td>
-                            <td>${item.category}</td>
-                            <td>${item.quantity}</td>
-                            <td>${item.piecesPerSet}</td>
-                            <td>${formatCurrency(item.pricePerSet)}</td>
-                            <td>${formatCurrency(item.pricePerSet * item.quantity)}</td>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total</th>
                         </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-            
-            <div style="text-align: right;">
-                <h3>Total Amount: ${formatCurrency(order.totalAmount)}</h3>
+                    </thead>
+                    <tbody>
+    `;
+
+    items.forEach(item => {
+        const total = item.quantity * item.pricePerSet;
+        html += `
+            <tr>
+                <td>${item.name}</td>
+                <td>${item.quantity}</td>
+                <td>₹${item.pricePerSet}</td>
+                <td>₹${total}</td>
+            </tr>
+        `;
+    });
+
+    html += `
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="order-total">
+                <p><strong>Total Amount: ₹${order.total_amount}</strong></p>
             </div>
         </div>
     `;
-    
-    orderModalContent.innerHTML = modalHTML;
-    orderModal.classList.add('active');
-    
-    const closeOrderModal = document.getElementById('closeOrderModal');
-    closeOrderModal.onclick = () => closeModal(orderModal);
+
+    content.innerHTML = html;
+    modal.style.display = 'block';
 }
 
-// ========== SETTINGS ==========
+function updateOrderStatus(orderId, currentStatus) {
+    const newStatus = prompt('Enter new status (pending/processing/completed/cancelled):', currentStatus);
+    if (newStatus && newStatus !== currentStatus) {
+        fetch(`/api/admin/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadOrders();
+                loadDashboardData(); // Update stats
+            } else {
+                alert('Error updating order status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error updating order status:', error);
+            alert('Error updating order status');
+        });
+    }
+}
+
 function initializeSettings() {
     const businessSettingsForm = document.getElementById('businessSettingsForm');
     const notificationSettingsForm = document.getElementById('notificationSettingsForm');
-    
-    businessSettingsForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        showNotification('Settings saved successfully', 'success');
+
+    if (businessSettingsForm) {
+        businessSettingsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveBusinessSettings();
+        });
+    }
+
+    if (notificationSettingsForm) {
+        notificationSettingsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveNotificationSettings();
+        });
+    }
+
+    // Load current settings
+    loadSettings();
+}
+
+function loadSettings() {
+    fetch('/api/admin/settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.business) {
+                document.getElementById('businessPhone').value = data.business.phone || '';
+                document.getElementById('businessEmail').value = data.business.email || '';
+            }
+            if (data.notifications) {
+                document.getElementById('ownerEmail').value = data.notifications.owner_email || '';
+                document.getElementById('ownerPhone').value = data.notifications.owner_phone || '';
+            }
+        })
+        .catch(error => console.error('Error loading settings:', error));
+}
+
+function saveBusinessSettings() {
+    const settings = {
+        phone: document.getElementById('businessPhone').value,
+        email: document.getElementById('businessEmail').value
+    };
+
+    fetch('/api/admin/settings/business', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Business settings saved successfully!');
+        } else {
+            alert('Error saving business settings: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving business settings:', error);
+        alert('Error saving business settings');
     });
-    
-    notificationSettingsForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        showNotification('Notification settings saved successfully', 'success');
+}
+
+function saveNotificationSettings() {
+    const settings = {
+        owner_email: document.getElementById('ownerEmail').value,
+        owner_phone: document.getElementById('ownerPhone').value
+    };
+
+    fetch('/api/admin/settings/notifications', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Notification settings saved successfully!');
+        } else {
+            alert('Error saving notification settings: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving notification settings:', error);
+        alert('Error saving notification settings');
     });
 }
-
-// ========== UTILITY FUNCTIONS ==========
-function formatCurrency(amount) {
-    return '₹' + amount.toLocaleString('en-IN');
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return date.toLocaleDateString('en-IN', options);
-}
-
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        padding: 15px 25px;
-        background-color: ${type === 'success' ? '#28A745' : type === 'error' ? '#DC3545' : '#17A2B8'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-        z-index: 10000;
-        animation: slideIn 0.3s ease;
-    `;
-    
-    notification.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 300);
-    }, 3000);
-}
-
-// Make functions available globally
-window.editProduct = editProduct;
-window.deleteProduct = deleteProduct;
-window.viewOrder = viewOrder;
